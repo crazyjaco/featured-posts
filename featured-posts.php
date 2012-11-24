@@ -25,6 +25,49 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 /**
+ * Create new custom post type
+ *
+ */
+function create_edition_post_type() {
+
+	$labels = array(
+		'name'			=> 'Editions',
+		'singular-name'		=> 'Edition',
+		''
+	);
+	$supports = array(
+		'title',
+	);
+//	$taxonomies = array(
+//		'powettv_characters',
+//		'powettv_series'
+//	);
+//	$rewrite = array(
+//		'slug'			=> 'edition'
+//	);
+	$args = array(
+		'labels' 		=> $labels,
+		'public' 		=> true,
+		'exclude_from_search'	=> true,
+		'publicly_queryable' 	=> false,
+		'show_ui' 		=> true,
+		'show_in_menu'		=> true,
+		'menu_position'		=> 5,
+		'hierarchical'		=> false,
+		'supports'		=> $supports,
+//		'taxonomies'		=> $taxonomies,
+		'rewrite'		=> false,
+		'query_var'		=> true,
+		'can_export'		=> true,
+		'has_archive'		=> false
+	);
+	register_post_type('powettv_editions', $args);
+
+}
+
+add_action( 'init','create_edition_post_type' );
+
+/**
  * Enqueue scripts on the post editor screens.
  *
  * @param string $hook_suffix
@@ -52,7 +95,7 @@ function bu_post_selector_admin_footer() {
 }
 
 function bu_feature_add_meta_box($post_type, $post) {
-	add_meta_box('bufeatured', "Featured", 'bu_feature_meta_box', $post_type, 'normal', 'high');
+	add_meta_box('bufeatured', "Featured", 'bu_feature_meta_box', 'powettv_editions', 'normal', 'high');
 
 }
 
@@ -67,8 +110,8 @@ add_action('add_meta_boxes', 'bu_feature_add_meta_box', 10, 2);
 function bu_feature_meta_box($post, $box) {
 	$feature = get_post_meta($post->ID, '_bu_feature', true);
 
-	$post_id = empty($feature['post_id']) ? '' : $feature['post_id'];
-	$title = empty($feature['title']) ? '' : $feature['title'];
+	//$post_id = empty($feature['post_id']) ? '' : $feature['post_id'];
+	//$title = empty($feature['title']) ? '' : $feature['title']
 
 	include('interface/meta-box.php');
 }
@@ -116,10 +159,17 @@ function bu_feature_save_post_handler($post_id, $post) {
 		return;
 	}
 
-	$feature_id = (int) trim(strip_tags($_POST['bu_feature']['post_id']));
-	$custom_title = trim(strip_tags($_POST['bu_feature']['title']));
+	$count =  count($_POST['bu_feature']['post_id']);
+	$posts = array();
+	$i = 0;
+	while ($i < $count ) {
+		$posts[$i]['post_id'] = (int) trim(strip_tags($_POST['bu_feature']['post_id'][$i]));
+		$posts[$i]['title'] = trim(strip_tags($_POST['bu_feature']['title'][$i]));
+		$i++;
+	}
+
 	// post_exists() check
-	update_post_meta($post_id, '_bu_feature', array('post_id' => $feature_id, 'title' => $custom_title));
+	update_post_meta($post_id, '_bu_feature', $posts);
 
 	// delete check
 

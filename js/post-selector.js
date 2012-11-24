@@ -29,11 +29,13 @@ jQuery(function($) {
 		var $selector = $(this);
 		var baseID = $selector.attr('id');
 
-		$selector.find('#' + baseID + '_post_id').val(e.post.ID);
-		$selector.find('#' + baseID + '_original_title').val(e.post.title);
-		$selector.find('#' + baseID + '_title').val(e.post.title);
-		$selector.find('#' + baseID + '_custom_title').val(e.post.title)
-			.removeAttr("disabled");
+		$('#bu_feature_selected_posts').append( $('<li><input type="hidden" id="bu_feature_post_id" name="bu_feature[post_id][]" value="' + e.post.ID + 
+			'"/><input id="bu_feature_custom_title" class="bu_title" name="bu_feature[title][]" type="text" value="' + e.post.title + 
+			'"/> <button class="button remove">Remove</button></li>'))
+			.find('.remove')
+			.unbind('click')
+			.bind('click', removeItem);
+
 		if(e.post.image) {
 			var sizes = ['thumbnail', 'small', 'medium', 'large'];
 			for(var i = 0; i < sizes.length; i++) {
@@ -104,13 +106,9 @@ jQuery(function($) {
 
 	var removeItem = function(e) {
 		e.preventDefault();
-		var $selector = $(this).closest('.post-selector');
-		var baseID = $selector.attr('id');
-		$selector.find('#' + baseID + '_post_id').val('');
-		$selector.find('#' + baseID + '_original_title').val('');
-		$selector.find('#' + baseID + '_title').val('');
-		$selector.find('#' + baseID + '_custom_title').val('')
-			.attr("disabled", "disabled");
+
+		$(this).closest('li').remove();
+
 	}
 
 
