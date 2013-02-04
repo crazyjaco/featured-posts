@@ -92,7 +92,9 @@ add_action('admin_enqueue_scripts', 'bu_featured_admin_scripts', 10, 1);
  **/
 function bu_post_selector_admin_footer() {
     include('interface/post-selector.php');
+    include('interface/media-selector.php');
 }
+
 
 function bu_feature_add_meta_box($post_type, $post) {
 	add_meta_box('bufeatured', "Featured", 'bu_feature_meta_box', 'powettv_editions', 'normal', 'high');
@@ -165,6 +167,7 @@ function bu_feature_save_post_handler($post_id, $post) {
 	while ($i < $count ) {
 		$posts[$i]['post_id'] = (int) trim(strip_tags($_POST['bu_feature']['post_id'][$i]));
 		$posts[$i]['title'] = trim(strip_tags($_POST['bu_feature']['title'][$i]));
+		$posts[$i]['feature_type'] = trim(strip_tags($_POST['bu_feature']['feature_type'][$i]));
 		$i++;
 	}
 
@@ -249,7 +252,8 @@ function bu_ajax_get_posts() {
 			'post_type' => $post->post_type,
 			'title' => trim(esc_html(strip_tags(get_the_title($post)))),
 			'date' => mysql2date(__('Y/m/d'), $post->post_date),
-			'status' => $post->post_status
+			'status' => $post->post_status,
+			'mediaurl' => get_post_meta($post->ID, '_powet_featured_video', true)
 		);
 
 		if (function_exists('bu_get_thumbnail')) {
@@ -281,3 +285,52 @@ function bu_ajax_get_posts() {
 }
 
 add_action('wp_ajax_bu_get_posts', 'bu_ajax_get_posts');
+
+/**
+ * Add custom ajax action that provides a mechanism for finding a post.
+ *
+ * @todo Add feature image
+ */
+function bu_ajax_get_media() {
+	global $post;
+
+	if(!wp_verify_nonce($_POST['nonce'], 'bu_ajax_post_search')) return;
+	// needs to support post_types, taxonomies, and ????
+	if(!current_user_can('edit_posts')) die(-1);
+
+	if(!is_numeric($_POST['post_id'])) return;
+
+	$args = array(
+		'p' => $_POST['post_id'],
+		'suppress_filters' => true,
+		'update_post_term_cache' => false,
+		'update_post_meta_cache' => true,
+		'order' => 'DESC',
+		'orderby' => 'post_date'
+	);
+
+	$query = new WP_Query($args);
+
+	if(!$query->have_posts()) die(-1);
+
+	$results = array();
+
+	while ($query->have_posts()) {
+		$query->the_post();
+		$result = array(
+			'ID' => $post->ID,
+			'post_type' => $post->post_type,
+			'title' => trim(esc_html(strip_tags(get_the_title($post)))),
+			'date' => mysql2date(__('Y/m/d'), $post->post_date),
+			'status' => $post->post_status
+		);
+		array_push($results, $result);
+	}
+
+	header('Content-type: application/json');
+	echo json_encode($results);
+	die();
+}
+
+add_action('wp_ajax_bu_get_media', 'bu_ajax_get_media');
+
